@@ -1,0 +1,8 @@
+extends: airbnb-base
+plugins:
+  - import
+env:
+  node: true
+  mocha: true
+rules:
+  no-console: 0

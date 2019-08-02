@@ -1,0 +1,27 @@
+{
+  "name": "imgcmp",
+  "version": "1.0.0",
+  "description": "tool for image compression",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint ."
+  },
+  "bin": {
+    "imgcmp": "bin/imgcmp.js"
+  },
+  "preferGlobal": true,
+  "repository": {
+    "type": "git",
+    "url": "https://sls.io/beta/-action--image-compression"
+  },
+  "author": "Buddy Authors",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^2.20.0"
+  },
+  "devDependencies": {
+    "eslint": "^5.16.0",
+    "eslint-config-airbnb-base": "^13.2.0",
+    "eslint-plugin-import": "^2.18.2"
+  }
+}
