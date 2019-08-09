@@ -3,6 +3,25 @@
 const program = require('commander');
 const fs = require('fs');
 const path = require('path');
+const colors = require('colors');
+const cmp = require('../app/cmp');
+
+/**
+ * @param {String} txt
+ */
+const outputError = (txt) => {
+  console.error(colors.red(txt));
+  process.exit(1);
+};
+
+/**
+ * @param {String} txt
+ * @param {Boolean} [exit]
+ */
+const output = (txt, exit) => {
+  if (txt) console.log(txt);
+  if (exit) process.exit(0);
+};
 
 program
   .version(JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json')).toString('utf8')).version, '-v, --version')
@@ -14,20 +33,17 @@ if (program.level < 1) program.level = 1;
 else if (program.level > 3) program.level = 3;
 
 if (program.args.length !== 1) {
-  console.error('Wrong number of parameters');
-  process.exit(1);
+  program.outputHelp();
+  output(null, true);
 }
 
 const p = program.args[0];
 try {
   if (!fs.statSync(p).isDirectory()) {
-    console.error('Path is not a directory');
-    process.exit(1);
+    outputError('Path is not a directory');
   }
 } catch (e) {
-  console.error('Path is not existing');
-  process.exit(1);
+  outputError('Path is not existing');
 }
 
-console.log('level', program.level);
-console.log('dir', p);
+cmp(path.resolve(p), program.level, output, outputError);
