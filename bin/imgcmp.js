@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const colors = require('colors');
 const cmp = require('../app/cmp');
+const paths = require('../app/paths');
 
 /**
  * @param {String} txt
@@ -46,4 +47,16 @@ try {
   outputError('Path is not existing');
 }
 
-cmp(path.resolve(p), program.level, output, outputError);
+const dir = path.resolve(p);
+const { level } = program;
+
+output(`Directory: ${dir}`);
+output(`Level: ${level}`);
+const files = paths(dir);
+if (!files.length) {
+  outputError('No files found (jpg, jpeg, png, svg, gif)');
+} else {
+  output(`Files found: ${files.length}`);
+}
+
+cmp(files, level, output, outputError);
