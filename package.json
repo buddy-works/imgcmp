@@ -17,8 +17,15 @@
   "author": "Buddy Authors",
   "license": "MIT",
   "dependencies": {
+    "async": "^3.1.0",
     "colors": "^1.3.3",
-    "commander": "^2.20.0"
+    "commander": "^2.20.0",
+    "imagemin": "^7.0.0",
+    "imagemin-giflossy": "^5.1.10",
+    "imagemin-gifsicle": "^6.0.1",
+    "imagemin-mozjpeg": "^8.0.0",
+    "imagemin-pngquant": "^8.0.0",
+    "imagemin-svgo": "^7.0.0"
   },
   "devDependencies": {
     "eslint": "^5.16.0",

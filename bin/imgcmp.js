@@ -8,26 +8,35 @@ const cmp = require('../app/cmp');
 const paths = require('../app/paths');
 
 /**
- * @param {String} txt
+ * @param {String|Object} err
  */
-const outputError = (txt) => {
-  console.error(colors.red(txt));
+const outputError = (err) => {
+  let msg;
+  if (typeof err === 'object') {
+    msg = err.message;
+    if (process.env.DEBUG === '1') console.log(err.stack);
+  } else {
+    msg = err;
+  }
+  console.error(colors.red(msg));
   process.exit(1);
 };
 
 /**
  * @param {String} txt
  * @param {Boolean} [exit]
+ * @param {Boolean} [noNewLine]
  */
-const output = (txt, exit) => {
-  if (txt) console.log(txt);
+const output = (txt, exit, noNewLine) => {
+  if (txt && !noNewLine) console.log(txt);
+  else if (txt && noNewLine) process.stdout.write(txt);
   if (exit) process.exit(0);
 };
 
 program
   .version(JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json')).toString('utf8')).version, '-v, --version')
   .usage('[options] path')
-  .option('-l, --level [value]', 'compression level [1-3], 3 being the hardest', parseInt, 2)
+  .option('-l, --level <number>', 'compression level [1-3], 3 being the hardest', val => parseInt(val, 10), 2)
   .parse(process.argv);
 
 if (program.level < 1) program.level = 1;
@@ -48,15 +57,15 @@ try {
 }
 
 const dir = path.resolve(p);
-const { level } = program;
 
 output(`Directory: ${dir}`);
-output(`Level: ${level}`);
-const files = paths(dir);
-if (!files.length) {
-  outputError('No files found (jpg, jpeg, png, svg, gif)');
-} else {
-  output(`Files found: ${files.length}`);
-}
+output(`Compression Level: ${program.level}`);
 
-cmp(files, level, output, outputError);
+paths(dir).then((files) => {
+  if (!files.length) {
+    outputError('No files found (jpg, jpeg, png, svg, gif)');
+  } else {
+    output(`${files.length} files found`);
+    cmp(files, program.level, output, outputError);
+  }
+}).catch(outputError);
