@@ -151,11 +151,10 @@ const cmp = (files, level, output, outputError) => {
     output(`${data.name}...`, false, true);
     const startFile = Date.now();
     cmpFile(level, data).then((percent) => {
-      if (percent <= 0) output('done in 0ms (no changes)');
-      else {
-        const time = Date.now() - startFile;
-        output(`done in ${time}ms (${percent}%)`);
-      }
+      const time = Date.now() - startFile;
+      let changes = `${percent}%`;
+      if (percent <= 0) changes = 'no changes';
+      output(`done in ${time}ms (${changes})`);
       cb();
     }).catch(cb);
   }, (err) => {
