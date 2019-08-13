@@ -18,6 +18,7 @@ const outputError = (err) => {
   } else {
     msg = err;
   }
+  console.log('');
   console.error(colors.red(msg));
   process.exit(1);
 };

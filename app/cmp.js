@@ -4,20 +4,36 @@ const imageminMozjpeg = require('imagemin-mozjpeg');
 const imageminPngquant = require('imagemin-pngquant');
 const imageminGiflossy = require('imagemin-giflossy');
 const imageminSvgo = require('imagemin-svgo');
+const fs = require('fs');
+const { exec } = require('child_process');
 
 let pluginPng;
 let pluginJpg;
 let pluginGif;
 let pluginSvg;
 
-const saveFile = (name, buffer) => new Promise((resolve) => {
-  // todo saveFile
-  resolve();
+const saveFile = (name, buffer) => new Promise((resolve, reject) => {
+  fs.writeFile(name, buffer, (err) => {
+    if (err) reject(err);
+    else resolve();
+  });
 });
 
-const fixTimes = (name, changeTime, modTime) => new Promise((resolve) => {
-  // todo fixTimes
-  resolve();
+const setSystemTime = datetime => new Promise((resolve, reject) => {
+  exec(`date --set="${datetime}"`, (err) => {
+    if (err) reject(err);
+    else resolve();
+  });
+});
+
+const fixTimes = (name, changeTime, modTime, accessTime) => new Promise((resolve, reject) => {
+  setSystemTime(changeTime.toISOString())
+    .then(() => {
+      fs.utimes(name, accessTime, modTime, (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    }).catch(reject);
 });
 
 const getPluginPng = (level) => {
@@ -116,32 +132,46 @@ const cmpFile = (level, data) => new Promise((resolve, reject) => {
   }
   p.then((buffer) => {
     newSize = buffer.length;
-    return saveFile(data.name, buffer);
-  }).then(() => fixTimes(data.name, data.changeTime, data.modTime))
-    .then(() => {
-      resolve(newSize);
-    });
+    const percent = Math.round((data.size - newSize) / data.size * 100);
+    if (percent <= 0) {
+      resolve(percent);
+      return;
+    }
+    saveFile(data.name, buffer)
+      .then(() => fixTimes(data.name, data.changeTime, data.modTime, data.accessTime))
+      .then(() => resolve(percent))
+      .catch(reject);
+  });
 });
 
 const cmp = (files, level, output, outputError) => {
-  output('Compressing...');
   const start = Date.now();
+  const hrstart = process.hrtime();
   async.eachSeries(files, (data, cb) => {
     output(`${data.name}...`, false, true);
     const startFile = Date.now();
-    cmpFile(level, data).then((newSize) => {
-      if (newSize >= data.size) output('done in 0ms (no changes)');
+    cmpFile(level, data).then((percent) => {
+      if (percent <= 0) output('done in 0ms (no changes)');
       else {
-        const percent = Math.round((data.size - newSize) / data.size * 100);
         const time = Date.now() - startFile;
         output(`done in ${time}ms (${percent}%)`);
       }
       cb();
     }).catch(cb);
   }, (err) => {
-    const finishedIn = Date.now() - start;
-    if (err) outputError(err);
-    else output(`Finished all in ${finishedIn}ms`, true);
+    if (err) {
+      outputError(err);
+      return;
+    }
+    const hrend = process.hrtime(hrstart);
+    const ms = hrend[0] + hrend[1] / 1000000;
+    setSystemTime(new Date(start + ms))
+      .then(() => {
+        output(`Finished in ${ms}ms`, true);
+      })
+      .catch((err2) => {
+        outputError(err2, true);
+      });
   });
 };
 

@@ -24,6 +24,7 @@ const getFileInfo = name => new Promise((resolve, reject) => {
         size: info.size,
         modTime: info.mtime,
         changeTime: info.ctime,
+        accessTime: info.atime,
       });
     }
   });
