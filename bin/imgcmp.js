@@ -67,7 +67,7 @@ output(`Restore dates: ${program.date}`);
 
 paths(dir).then((files) => {
   if (!files.length) {
-    outputError('No files found (jpg, jpeg, png, svg)');
+    outputError('No files found (jpg, jpeg, png, svg, gif)');
   } else {
     output(`${files.length} files found`);
     cmp(files, program.level, program.date, output, outputError);

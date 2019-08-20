@@ -2,12 +2,14 @@ const async = require('async');
 const imagemin = require('imagemin');
 const imageminMozjpeg = require('imagemin-mozjpeg');
 const imageminPngquant = require('imagemin-pngquant');
+const imageminGifsicle = require('imagemin-gifsicle');
 const imageminSvgo = require('imagemin-svgo');
 const fs = require('fs');
 const { exec } = require('child_process');
 
 let pluginPng;
 let pluginJpg;
+let pluginGif;
 let pluginSvg;
 
 const saveFile = (name, buffer) => new Promise((resolve, reject) => {
@@ -50,6 +52,25 @@ const cmpPng = (level, name) => new Promise((resolve) => {
   imagemin([name], {
     plugins: [
       getPluginPng(),
+    ],
+  }).then((result) => {
+    resolve(result[0].data);
+  });
+});
+
+const getPluginGif = (level) => {
+  if (!pluginGif) {
+    pluginGif = imageminGifsicle({
+      optimizationLevel: level,
+    });
+  }
+  return pluginGif;
+};
+
+const cmpGif = (level, name) => new Promise((resolve) => {
+  imagemin([name], {
+    plugins: [
+      getPluginGif(level),
     ],
   }).then((result) => {
     resolve(result[0].data);
@@ -100,6 +121,7 @@ const cmpFile = (level, restoreDates, data) => new Promise((resolve, reject) => 
   let newSize;
   if (data.isJpg) p = cmpJpg(level, data.name);
   else if (data.isPng) p = cmpPng(level, data.name);
+  else if (data.isGif) p = cmpGif(level, data.name);
   else if (data.isSvg) p = cmpSvg(level, data.name);
   else {
     reject(new Error('Wrong file type'));
