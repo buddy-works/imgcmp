@@ -38,10 +38,12 @@ program
   .version(JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json')).toString('utf8')).version, '-v, --version')
   .usage('[options] path')
   .option('-l, --level <number>', 'compression level [1-3], 3 being the hardest', val => parseInt(val, 10), 2)
+  .option('-d, --date', 'restore mod & change date')
   .parse(process.argv);
 
 if (program.level < 1) program.level = 1;
 else if (program.level > 3) program.level = 3;
+if (!program.date) program.date = false;
 
 if (program.args.length !== 1) {
   program.outputHelp();
@@ -61,12 +63,13 @@ const dir = path.resolve(p);
 
 output(`Directory: ${dir}`);
 output(`Compression Level: ${program.level}`);
+output(`Restore dates: ${program.date}`);
 
 paths(dir).then((files) => {
   if (!files.length) {
     outputError('No files found (jpg, jpeg, png, svg, gif)');
   } else {
     output(`${files.length} files found`);
-    cmp(files, program.level, output, outputError);
+    cmp(files, program.level, program.date, output, outputError);
   }
 }).catch(outputError);

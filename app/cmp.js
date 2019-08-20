@@ -19,8 +19,11 @@ const saveFile = (name, buffer) => new Promise((resolve, reject) => {
   });
 });
 
-const setSystemTime = datetime => new Promise((resolve) => {
-  exec(`date --set="${datetime}"`, resolve);
+const setSystemTime = datetime => new Promise((resolve, reject) => {
+  exec(`date --set="${datetime}"`, (err) => {
+    if (err) reject(err);
+    else resolve();
+  });
 });
 
 const fixTimes = (name, changeTime, modTime, accessTime) => new Promise((resolve, reject) => {
@@ -30,7 +33,7 @@ const fixTimes = (name, changeTime, modTime, accessTime) => new Promise((resolve
         if (err) reject(err);
         else resolve();
       });
-    });
+    }).catch(reject);
 });
 
 const getPluginPng = (level) => {
@@ -116,7 +119,7 @@ const cmpJpg = (level, name) => new Promise((resolve) => {
   });
 });
 
-const cmpFile = (level, data) => new Promise((resolve, reject) => {
+const cmpFile = (level, restoreDates, data) => new Promise((resolve, reject) => {
   let p;
   let newSize;
   if (data.isJpg) p = cmpJpg(level, data.name);
@@ -135,7 +138,10 @@ const cmpFile = (level, data) => new Promise((resolve, reject) => {
       return;
     }
     saveFile(data.name, buffer)
-      .then(() => fixTimes(data.name, data.changeTime, data.modTime, data.accessTime))
+      .then(() => {
+        if (restoreDates) return fixTimes(data.name, data.changeTime, data.modTime, data.accessTime);
+        return Promise.resolve();
+      })
       .then(() => resolve(percent))
       .catch(reject);
   });
@@ -148,13 +154,13 @@ const timeEnd = (ts) => {
   return Math.round((hr[0] + hr[1] / 1000000000) * 1000);
 };
 
-const cmp = (files, level, output, outputError) => {
+const cmp = (files, level, restoreDates, output, outputError) => {
   const start = Date.now();
   const wholeStart = timeStart();
   async.eachSeries(files, (data, cb) => {
     output(`${data.name}...`, false, true);
     const fileStart = timeStart();
-    cmpFile(level, data).then((percent) => {
+    cmpFile(level, restoreDates, data).then((percent) => {
       const fileTime = timeEnd(fileStart);
       let changes = `${percent}%`;
       if (percent <= 0) changes = 'no changes';
@@ -167,10 +173,14 @@ const cmp = (files, level, output, outputError) => {
       return;
     }
     const wholeTime = timeEnd(wholeStart);
-    setSystemTime(new Date(start + wholeTime))
-      .then(() => {
-        output(`Finished in ${wholeTime}ms`, true);
-      });
+    if (restoreDates) {
+      setSystemTime(new Date(start + wholeTime))
+        .then(() => {
+          output(`Finished in ${wholeTime}ms`, true);
+        });
+    } else {
+      output(`Finished in ${wholeTime}ms`, true);
+    }
   });
 };
 
