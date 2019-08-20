@@ -10,11 +10,7 @@
     "imgcmp": "bin/imgcmp.js"
   },
   "preferGlobal": true,
-  "repository": {
-    "type": "git",
-    "url": "https://sls.io/beta/-action--image-compression"
-  },
-  "author": "Buddy Authors",
+  "author": "Buddy Team",
   "license": "MIT",
   "dependencies": {
     "async": "^3.1.0",
