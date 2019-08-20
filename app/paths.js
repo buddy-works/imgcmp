@@ -1,15 +1,13 @@
 const fs = require('fs');
 const path = require('path');
 
-const isImg = p => /\.(jpg|jpeg|png|svg|gif)$/i.test(p);
+const isImg = p => /\.(jpg|jpeg|png|svg)$/i.test(p);
 
 const isJpg = p => /\.(jpg|jpeg)$/i.test(p);
 
 const isPng = p => /\.png$/i.test(p);
 
 const isSvg = p => /\.svg$/i.test(p);
-
-const isGif = p => /\.gif$/i.test(p);
 
 const getFileInfo = name => new Promise((resolve, reject) => {
   fs.stat(name, (err, info) => {
@@ -20,7 +18,6 @@ const getFileInfo = name => new Promise((resolve, reject) => {
         isJpg: isJpg(name),
         isPng: isPng(name),
         isSvg: isSvg(name),
-        isGif: isGif(name),
         size: info.size,
         modTime: info.mtime,
         changeTime: info.ctime,

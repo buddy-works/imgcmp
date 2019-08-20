@@ -16,7 +16,7 @@ imgcmp is used to compress images from the terminal.
 
 Features
 ------------------------------------------------------------------------------
-- compress jpg, png, svg, gif
+- compress jpg, png, svg
 - point to folder and tool will find all images for you
 - three levels of compression
 - integrated as an pipeline action in [**Buddy.Works**](https://buddy.works/)
