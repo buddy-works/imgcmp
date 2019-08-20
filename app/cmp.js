@@ -2,7 +2,7 @@ const async = require('async');
 const imagemin = require('imagemin');
 const imageminMozjpeg = require('imagemin-mozjpeg');
 const imageminPngquant = require('imagemin-pngquant');
-const imageminGiflossy = require('imagemin-giflossy');
+const imageminGifsicle = require('imagemin-gifsicle');
 const imageminSvgo = require('imagemin-svgo');
 const fs = require('fs');
 const { exec } = require('child_process');
@@ -60,11 +60,8 @@ const cmpPng = (level, name) => new Promise((resolve) => {
 
 const getPluginGif = (level) => {
   if (!pluginGif) {
-    let lossy = 20;
-    if (level >= 3) lossy = 200;
-    else if (level >= 2) lossy = 100;
-    pluginGif = imageminGiflossy({
-      lossy,
+    pluginGif = imageminGifsicle({
+      optimizationLevel: level,
     });
   }
   return pluginGif;
