@@ -19,11 +19,8 @@ const saveFile = (name, buffer) => new Promise((resolve, reject) => {
   });
 });
 
-const setSystemTime = datetime => new Promise((resolve, reject) => {
-  exec(`date --set="${datetime}"`, (err) => {
-    if (err) reject(err);
-    else resolve();
-  });
+const setSystemTime = datetime => new Promise((resolve) => {
+  exec(`date --set="${datetime}"`, resolve);
 });
 
 const fixTimes = (name, changeTime, modTime, accessTime) => new Promise((resolve, reject) => {
@@ -33,7 +30,7 @@ const fixTimes = (name, changeTime, modTime, accessTime) => new Promise((resolve
         if (err) reject(err);
         else resolve();
       });
-    }).catch(reject);
+    });
 });
 
 const getPluginPng = (level) => {
@@ -144,17 +141,24 @@ const cmpFile = (level, data) => new Promise((resolve, reject) => {
   });
 });
 
+const timeStart = () => process.hrtime();
+
+const timeEnd = (ts) => {
+  const hr = process.hrtime(ts);
+  return Math.round((hr[0] + hr[1] / 1000000000) * 1000);
+};
+
 const cmp = (files, level, output, outputError) => {
   const start = Date.now();
-  const hrstart = process.hrtime();
+  const wholeStart = timeStart();
   async.eachSeries(files, (data, cb) => {
     output(`${data.name}...`, false, true);
-    const startFile = Date.now();
+    const fileStart = timeStart();
     cmpFile(level, data).then((percent) => {
-      const time = Date.now() - startFile;
+      const fileTime = timeEnd(fileStart);
       let changes = `${percent}%`;
       if (percent <= 0) changes = 'no changes';
-      output(`done in ${time}ms (${changes})`);
+      output(`done in ${fileTime}ms (${changes})`);
       cb();
     }).catch(cb);
   }, (err) => {
@@ -162,14 +166,10 @@ const cmp = (files, level, output, outputError) => {
       outputError(err);
       return;
     }
-    const hrend = process.hrtime(hrstart);
-    const ms = hrend[0] + hrend[1] / 1000000;
-    setSystemTime(new Date(start + ms))
+    const wholeTime = timeEnd(wholeStart);
+    setSystemTime(new Date(start + wholeTime))
       .then(() => {
-        output(`Finished in ${ms}ms`, true);
-      })
-      .catch((err2) => {
-        outputError(err2, true);
+        output(`Finished in ${wholeTime}ms`, true);
       });
   });
 };
