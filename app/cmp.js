@@ -41,8 +41,12 @@ const getPluginPng = (level) => {
 // GIF
 const getPluginGif = (level) => {
   if (!pluginGif) {
+    let colors = 256;
+    if (level >= 3) colors = 128;
+    else if (level >= 2) colors = 192;
     pluginGif = imageminGifsicle({
       optimizationLevel: level,
+      colors,
     });
   }
   return pluginGif;
