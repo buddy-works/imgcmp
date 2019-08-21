@@ -144,13 +144,16 @@ const ensureDest = (dest, force) => new Promise((resolve, reject) => {
 
 const cmp = (source, dest, level, force, output, outputError) => {
   const meta = new Meta(dest);
-  if (meta.isNew()) {
+  const isMetaNew = meta.isNew();
+  const isMetaChangedLevel = meta.saveLevel(level);
+  const isMetaChangedSource = meta.saveSource(source);
+  if (isMetaNew) {
     force = true;
-    output('First time running - forcing refresh all');
-  } else if (meta.saveLevel(level)) {
+    output('First time running');
+  } else if (isMetaChangedLevel) {
     force = true;
     output('Changing level of compression - forcing refresh all');
-  } else if (meta.saveSource(source)) {
+  } else if (isMetaChangedSource) {
     force = true;
     output('Changing source path - forcing refresh all');
   }

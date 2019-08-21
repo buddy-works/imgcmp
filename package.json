@@ -1,6 +1,6 @@
 {
   "name": "imgcmp",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "tool for image compression",
   "main": "index.js",
   "scripts": {
