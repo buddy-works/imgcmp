@@ -3,12 +3,14 @@ const path = require('path');
 
 function Meta(dest) {
   let data;
+  let isNew = true;
   const configPath = path.join(dest, '.imgcmp');
 
   if (fs.existsSync(configPath)) {
     try {
       // read config if exists
       data = JSON.parse(fs.readFileSync(configPath).toString('utf8'));
+      isNew = false;
     } catch (e) {
       data = {};
     }
@@ -46,6 +48,8 @@ function Meta(dest) {
     }
     return false;
   };
+
+  this.isNew = () => isNew;
 }
 
 module.exports = Meta;
