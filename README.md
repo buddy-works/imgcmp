@@ -19,6 +19,8 @@ Features
 - compress jpg, png, svg, gif
 - three levels of compression
 - compress only changed images
+- recurrent search
+- preserved directory structure 
 - integrated as an pipeline action in [**Buddy.Works**](https://buddy.works/)
 
 
