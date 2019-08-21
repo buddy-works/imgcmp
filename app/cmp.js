@@ -1,41 +1,31 @@
-const async = require('async');
 const imagemin = require('imagemin');
 const imageminMozjpeg = require('imagemin-mozjpeg');
 const imageminPngquant = require('imagemin-pngquant');
 const imageminGifsicle = require('imagemin-gifsicle');
 const imageminSvgo = require('imagemin-svgo');
-const fs = require('fs');
-const { exec } = require('child_process');
+const fs = require('fs-extra');
+const crypto = require('crypto');
+const path = require('path');
+const Meta = require('./meta');
+const paths = require('../app/paths');
 
 let pluginPng;
 let pluginJpg;
 let pluginGif;
 let pluginSvg;
 
+// save file content to disc
 const saveFile = (name, buffer) => new Promise((resolve, reject) => {
-  fs.writeFile(name, buffer, (err) => {
-    if (err) reject(err);
-    else resolve();
-  });
-});
-
-const setSystemTime = datetime => new Promise((resolve, reject) => {
-  exec(`date --set="${datetime}"`, (err) => {
-    if (err) reject(err);
-    else resolve();
-  });
-});
-
-const fixTimes = (name, changeTime, modTime, accessTime) => new Promise((resolve, reject) => {
-  setSystemTime(changeTime.toISOString())
+  fs.ensureDir(path.dirname(name))
     .then(() => {
-      fs.utimes(name, accessTime, modTime, (err) => {
+      fs.writeFile(name, buffer, (err) => {
         if (err) reject(err);
         else resolve();
       });
     }).catch(reject);
 });
 
+// PNG
 const getPluginPng = (level) => {
   if (!pluginPng) {
     let quality = [0.8, 0.9];
@@ -48,16 +38,7 @@ const getPluginPng = (level) => {
   return pluginPng;
 };
 
-const cmpPng = (level, name) => new Promise((resolve) => {
-  imagemin([name], {
-    plugins: [
-      getPluginPng(),
-    ],
-  }).then((result) => {
-    resolve(result[0].data);
-  });
-});
-
+// GIF
 const getPluginGif = (level) => {
   if (!pluginGif) {
     pluginGif = imageminGifsicle({
@@ -67,16 +48,7 @@ const getPluginGif = (level) => {
   return pluginGif;
 };
 
-const cmpGif = (level, name) => new Promise((resolve) => {
-  imagemin([name], {
-    plugins: [
-      getPluginGif(level),
-    ],
-  }).then((result) => {
-    resolve(result[0].data);
-  });
-});
-
+// SVG
 const getPluginSvg = () => {
   if (!pluginSvg) {
     pluginSvg = imageminSvgo();
@@ -84,16 +56,7 @@ const getPluginSvg = () => {
   return pluginSvg;
 };
 
-const cmpSvg = (level, name) => new Promise((resolve) => {
-  imagemin([name], {
-    plugins: [
-      getPluginSvg(),
-    ],
-  }).then((result) => {
-    resolve(result[0].data);
-  });
-});
-
+// JPG
 const getPluginJpg = (level) => {
   if (!pluginJpg) {
     let quality = 80;
@@ -106,42 +69,61 @@ const getPluginJpg = (level) => {
   return pluginJpg;
 };
 
-const cmpJpg = (level, name) => new Promise((resolve) => {
+// compress file using imagemin & plugins
+const min = (level, name) => new Promise((resolve, reject) => {
   imagemin([name], {
     plugins: [
+      getPluginSvg(),
       getPluginJpg(level),
+      getPluginGif(level),
+      getPluginPng(level),
     ],
   }).then((result) => {
     resolve(result[0].data);
+  }).catch(reject);
+});
+
+const getSha1AndSize = filePath => new Promise((resolve, reject) => {
+  const rs = fs.createReadStream(filePath);
+  const sha1 = crypto.createHash('sha1');
+  let size = 0;
+  rs.on('error', reject);
+  rs.on('data', (data) => {
+    size += data.length;
+    sha1.update(data);
+  });
+  rs.on('close', () => {
+    resolve({
+      hash: sha1.digest('hex'),
+      size,
+    });
   });
 });
 
-const cmpFile = (level, restoreDates, data) => new Promise((resolve, reject) => {
-  let p;
-  let newSize;
-  if (data.isJpg) p = cmpJpg(level, data.name);
-  else if (data.isPng) p = cmpPng(level, data.name);
-  else if (data.isGif) p = cmpGif(level, data.name);
-  else if (data.isSvg) p = cmpSvg(level, data.name);
-  else {
-    reject(new Error('Wrong file type'));
-    return;
-  }
-  p.then((buffer) => {
-    newSize = buffer.length;
-    const percent = Math.round((data.size - newSize) / data.size * 100);
-    if (percent <= 0) {
-      resolve(percent);
-      return;
-    }
-    saveFile(data.name, buffer)
-      .then(() => {
-        if (restoreDates) return fixTimes(data.name, data.changeTime, data.modTime, data.accessTime);
-        return Promise.resolve();
-      })
-      .then(() => resolve(percent))
-      .catch(reject);
-  });
+// compress file
+const cmpFile = (meta, source, dest, level, force, fileData) => new Promise((resolve, reject) => {
+  // first get sha1 & size of file
+  getSha1AndSize(fileData.name)
+    .then((obj) => {
+      // if we didnt force compression and file didnt changed - move on
+      if (!force && !meta.hasFileChanged(fileData.shortName, obj.hash)) {
+        resolve(0);
+        return;
+      }
+      // compress
+      min(level, fileData.name).then((buffer) => {
+        const newSize = buffer.length;
+        // count percent of change
+        const percent = !obj.size ? 0 : Math.round((obj.size - newSize) / obj.size * 100);
+        // save to disc
+        saveFile(path.join(dest, fileData.shortName), buffer)
+          .then(() => {
+            // save to meta
+            meta.saveFile(fileData.shortName, obj.hash);
+            resolve(percent);
+          }).catch(reject);
+      }).catch(reject);
+    }).catch(reject);
 });
 
 const timeStart = () => process.hrtime();
@@ -151,34 +133,48 @@ const timeEnd = (ts) => {
   return Math.round((hr[0] + hr[1] / 1000000000) * 1000);
 };
 
-const cmp = (files, level, restoreDates, output, outputError) => {
-  const start = Date.now();
+const ensureDest = (dest, force) => new Promise((resolve, reject) => {
+  if (force) fs.emptyDir(dest).then(resolve).catch(reject);
+  else fs.ensureDir(dest).then(resolve).catch(reject);
+});
+
+const cmp = (source, dest, level, force, output, outputError) => {
+  const meta = new Meta(dest);
+  if (meta.saveLevel(level)) {
+    force = true;
+    output('Changing level of compression - forcing refresh all');
+  }
+  if (meta.saveSource(source)) {
+    force = true;
+    output('Changing source path - forcing refresh all');
+  }
+  output(`Source: ${source}`);
+  output(`Destination: ${dest}`);
+  output(`Compression Level: ${level}`);
+  output(`Force: ${force}`);
+
   const wholeStart = timeStart();
-  async.eachSeries(files, (data, cb) => {
-    output(`${data.name}...`, false, true);
-    const fileStart = timeStart();
-    cmpFile(level, restoreDates, data).then((percent) => {
-      const fileTime = timeEnd(fileStart);
-      let changes = `${percent}%`;
-      if (percent <= 0) changes = 'no changes';
-      output(`done in ${fileTime}ms (${changes})`);
-      cb();
-    }).catch(cb);
-  }, (err) => {
-    if (err) {
-      outputError(err);
-      return;
-    }
-    const wholeTime = timeEnd(wholeStart);
-    if (restoreDates) {
-      setSystemTime(new Date(start + wholeTime))
-        .then(() => {
-          output(`Finished in ${wholeTime}ms`, true);
-        });
-    } else {
-      output(`Finished in ${wholeTime}ms`, true);
-    }
-  });
+  // ensure dest exists
+  ensureDest(dest, force).then(() => {
+    // get files
+    paths(source, (fileData, done) => {
+      // try to compress each file found
+      cmpFile(meta, source, dest, level, force, fileData)
+        .then((percent) => {
+          let changes = `-${percent}%`;
+          if (percent <= 0) changes = 'no changes';
+          output(`${fileData.shortName} ${changes}`);
+          done();
+        })
+        .catch(outputError);
+    }).then(() => {
+      // save meta changes to disc
+      meta.saveChanges().then(() => {
+        const wholeTime = timeEnd(wholeStart);
+        output(`Finished in ${wholeTime}ms`, true);
+      }).catch(outputError);
+    }).catch(outputError);
+  }).catch(outputError);
 };
 
 module.exports = cmp;

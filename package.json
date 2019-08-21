@@ -1,6 +1,6 @@
 {
   "name": "imgcmp",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "tool for image compression",
   "main": "index.js",
   "scripts": {
@@ -15,6 +15,7 @@
     "async": "^3.1.0",
     "colors": "^1.3.3",
     "commander": "^2.20.0",
+    "fs-extra": "^8.1.0",
     "imagemin": "^7.0.0",
     "imagemin-gifsicle": "^6.0.1",
     "imagemin-mozjpeg": "^8.0.0",

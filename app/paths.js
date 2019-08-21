@@ -1,60 +1,36 @@
 const fs = require('fs');
 const path = require('path');
+const async = require('async');
 
 const isImg = p => /\.(jpg|jpeg|png|svg|gif)$/i.test(p);
 
-const isJpg = p => /\.(jpg|jpeg)$/i.test(p);
-
-const isPng = p => /\.png$/i.test(p);
-
-const isSvg = p => /\.svg$/i.test(p);
-
-const isGif = p => /\.gif$/i.test(p);
-
-const getFileInfo = name => new Promise((resolve, reject) => {
-  fs.stat(name, (err, info) => {
-    if (err) reject(err);
-    else {
-      resolve({
-        name,
-        isJpg: isJpg(name),
-        isPng: isPng(name),
-        isSvg: isSvg(name),
-        isGif: isGif(name),
-        size: info.size,
-        modTime: info.mtime,
-        changeTime: info.ctime,
-        accessTime: info.atime,
-      });
-    }
-  });
-});
-
-const getPaths = dir => new Promise((resolve, reject) => {
+const getPaths = (dir, onFile, sourcePath) => new Promise((resolve, reject) => {
+  // root dir
+  let sp = sourcePath;
+  if (!sp) sp = dir;
+  // read dir
   fs.readdir(dir, {
     withFileTypes: true,
   }, (err, paths) => {
-    if (err) reject(err);
+    if (err) reject(err);// exit with error
     else {
-      const promises = [];
-      for (let i = 0; i < paths.length; i += 1) {
-        const p = paths[i];
+      // for each path in dir
+      async.each(paths, (p, cb) => {
         const name = path.join(dir, p.name);
         if (p.isDirectory()) {
-          promises.push(getPaths(name));
+          // is directory - read recurrent
+          getPaths(name, onFile, sp).then(cb).catch(cb);
         } else if (p.isFile() && isImg(name)) {
-          promises.push(getFileInfo(name));
-        }
-      }
-      Promise.all(promises).then((arr) => {
-        let result = [];
-        for (let i = 0; i < arr.length; i += 1) {
-          const item = arr[i];
-          if (typeof item === 'string') result.push(item);
-          else result = result.concat(item);
-        }
-        resolve(result);
-      }).catch(reject);
+          // is image file - process
+          onFile({
+            name,
+            shortName: name.replace(`${sp}/`, ''),
+          }, cb);
+        } else cb();// ignore rest
+      }, (err2) => {
+        if (err2) reject(err2);
+        else resolve();
+      });
     }
   });
 });
