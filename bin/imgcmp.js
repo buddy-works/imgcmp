@@ -53,4 +53,8 @@ try {
 source = path.resolve(source);
 dest = path.resolve(dest);
 
+if (source === dest) outputError('Source & destination path must not be the same');
+
+if (path.relative(source, dest)) outputError('Destination path must not be in source path');
+
 cmp(source, dest, program.level, program.force, output, outputError);
