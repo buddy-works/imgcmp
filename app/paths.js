@@ -24,7 +24,7 @@ const getPaths = (dir, onFile, sourcePath) => new Promise((resolve, reject) => {
           // is image file - process
           onFile({
             name,
-            shortName: name.replace(`${sp}/`, ''),
+            shortName: name.replace(`${sp}${path.sep}`, ''),
           }, cb);
         } else cb();// ignore rest
       }, (err2) => {
