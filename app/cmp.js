@@ -76,6 +76,7 @@ const getPluginJpg = (level) => {
 // compress file using imagemin & plugins
 const min = (level, name) => new Promise((resolve, reject) => {
   imagemin([name], {
+    glob: false,
     plugins: [
       getPluginSvg(),
       getPluginJpg(level),
