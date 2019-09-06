@@ -26,7 +26,7 @@ const output = (txt, exit, noNewLine) => {
 
 const isChildPath = (parent, child) => {
   if (child === parent) return false;
-  const paths = parent.split(path.sep).filter(i => i.length);
+  const paths = parent.split(path.sep);
   return paths.every((t, i) => child.split(path.sep)[i] === t);
 };
 
@@ -60,7 +60,6 @@ source = path.resolve(source);
 dest = path.resolve(dest);
 
 if (source === dest) outputError('Source & destination path must not be the same');
-
 if (isChildPath(source, dest)) outputError('Destination path must not be in source path');
 
 cmp(source, dest, program.level, program.force, output, outputError);

@@ -83,7 +83,8 @@ const min = (level, name) => new Promise((resolve, reject) => {
       getPluginPng(level),
     ],
   }).then((result) => {
-    resolve(result[0].data);
+    if (result && result.length > 0) resolve(result[0].data);
+    else resolve();
   }).catch(reject);
 });
 
@@ -116,6 +117,10 @@ const cmpFile = (meta, source, dest, level, force, fileData) => new Promise((res
       }
       // compress
       min(level, fileData.name).then((buffer) => {
+        if (!buffer) {
+          resolve(-1);
+          return;
+        }
         const newSize = buffer.length;
         // count percent of change
         const percent = !obj.size ? 0 : Math.round((obj.size - newSize) / obj.size * 100);
@@ -171,7 +176,8 @@ const cmp = (source, dest, level, force, output, outputError) => {
       cmpFile(meta, source, dest, level, force, fileData)
         .then((percent) => {
           let changes = `-${percent}%`;
-          if (percent <= 0) changes = 'no changes';
+          if (percent === 0) changes = 'no changes';
+          else if (percent < 0) changes = 'ignored';
           output(`${fileData.shortName} ${changes}`);
           done();
         })
