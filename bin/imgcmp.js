@@ -35,11 +35,13 @@ program
   .usage('[options] sourcePath destinationPath')
   .option('-l, --level <number>', 'compression level [1-3], 3 being the hardest', val => parseInt(val, 10), 2)
   .option('-f, --force', 'compress all found files, even without changes')
+  .option('-t, --types <types>', 'comma separated list e.g. jpg,png,gif,svg', val => val.split(','))
   .parse(process.argv);
 
 if (program.level < 1) program.level = 1;
 else if (program.level > 3) program.level = 3;
 if (!program.force) program.force = false;
+if (!program.types) program.types = [];
 
 if (program.args.length !== 2) {
   program.outputHelp();
@@ -62,4 +64,4 @@ dest = path.resolve(dest);
 if (source === dest) outputError('Source & destination path must not be the same');
 if (isChildPath(source, dest)) outputError('Destination path must not be in source path');
 
-cmp(source, dest, program.level, program.force, output, outputError);
+cmp(source, dest, program.level, program.force, program.types, output, outputError);

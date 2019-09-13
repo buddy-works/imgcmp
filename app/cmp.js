@@ -148,7 +148,38 @@ const ensureDest = (dest, force) => new Promise((resolve, reject) => {
   else fs.ensureDir(dest).then(resolve).catch(reject);
 });
 
-const cmp = (source, dest, level, force, output, outputError) => {
+const getAllowedTypes = (types) => {
+  const all = {
+    jpg: true,
+    png: true,
+    gif: true,
+    svg: true,
+  };
+  let r = [];
+  for (let i = 0; i < types.length; i += 1) {
+    const t = types[i];
+    if (all[t]) {
+      r.push(t);
+      all[t] = false;
+    }
+  }
+  if (!r.length) r = Object.keys(all);
+  return r;
+};
+
+const getImageTester = (types) => {
+  for (let i = 0; i < types.length; i += 1) {
+    if (types[i] === 'jpg') {
+      types.push('jpeg');
+      break;
+    }
+  }
+  const r = new RegExp(`\\.(${types.join('|')})$`, 'i');
+  return p => r.test(p);
+};
+
+const cmp = (source, dest, level, force, types, output, outputError) => {
+  const allowedTypes = getAllowedTypes(types);
   const meta = new Meta(dest);
   const isMetaNew = meta.isNew();
   const isMetaChangedLevel = meta.saveLevel(level);
@@ -166,23 +197,24 @@ const cmp = (source, dest, level, force, output, outputError) => {
   output(`Source: ${source}`);
   output(`Destination: ${dest}`);
   output(`Compression Level: ${level}`);
+  output(`Types: ${allowedTypes}`);
   output(`Force: ${force}`);
 
   const wholeStart = timeStart();
+  // get image tester
+  const isImg = getImageTester(allowedTypes);
   // ensure dest exists
   ensureDest(dest, force).then(() => {
     // get files
-    paths(source, (fileData, done) => {
+    paths(source, isImg, (fileData, done) => {
       // try to compress each file found
-      cmpFile(meta, source, dest, level, force, fileData)
-        .then((percent) => {
-          let changes = `-${percent}%`;
-          if (percent === 0) changes = 'no changes';
-          else if (percent < 0) changes = 'ignored';
-          output(`${fileData.shortName} ${changes}`);
-          done();
-        })
-        .catch(outputError);
+      cmpFile(meta, source, dest, level, force, fileData).then((percent) => {
+        let changes = `-${percent}%`;
+        if (percent === 0) changes = 'no changes';
+        else if (percent < 0) changes = 'ignored';
+        output(`${fileData.shortName} ${changes}`);
+        done();
+      }).catch(outputError);
     }).then(() => {
       // save meta changes to disc
       meta.saveChanges().then(() => {

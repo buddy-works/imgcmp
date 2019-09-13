@@ -2,9 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const async = require('async');
 
-const isImg = p => /\.(jpg|jpeg|png|svg|gif)$/i.test(p);
-
-const getPaths = (dir, onFile, sourcePath) => new Promise((resolve, reject) => {
+const getPaths = (dir, isImg, onFile, sourcePath) => new Promise((resolve, reject) => {
   // root dir
   let sp = sourcePath;
   if (!sp) sp = dir;
@@ -19,7 +17,7 @@ const getPaths = (dir, onFile, sourcePath) => new Promise((resolve, reject) => {
         const name = path.join(dir, p.name);
         if (p.isDirectory()) {
           // is directory - read recurrent
-          getPaths(name, onFile, sp).then(cb).catch(cb);
+          getPaths(name, isImg, onFile, sp).then(cb).catch(cb);
         } else if (p.isFile() && isImg(name)) {
           // is image file - process
           onFile({
