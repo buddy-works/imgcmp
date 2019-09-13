@@ -206,7 +206,7 @@ const cmp = (source, dest, level, force, types, output, outputError) => {
   // ensure dest exists
   ensureDest(dest, force).then(() => {
     // get files
-    paths(source, isImg, (fileData, done) => {
+    paths(source, dest, isImg, (fileData, done) => {
       // try to compress each file found
       cmpFile(meta, source, dest, level, force, fileData).then((percent) => {
         let changes = `-${percent}%`;

@@ -24,12 +24,6 @@ const output = (txt, exit, noNewLine) => {
   if (exit) process.exit(0);
 };
 
-const isChildPath = (parent, child) => {
-  if (child === parent) return false;
-  const paths = parent.split(path.sep);
-  return paths.every((t, i) => child.split(path.sep)[i] === t);
-};
-
 program
   .version(JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json')).toString('utf8')).version, '-v, --version')
   .usage('[options] sourcePath destinationPath')
@@ -62,6 +56,5 @@ source = path.resolve(source);
 dest = path.resolve(dest);
 
 if (source === dest) outputError('Source & destination path must not be the same');
-if (isChildPath(source, dest)) outputError('Destination path must not be in source path');
 
 cmp(source, dest, program.level, program.force, program.types, output, outputError);

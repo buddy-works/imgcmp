@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const async = require('async');
 
-const getPaths = (dir, isImg, onFile, sourcePath) => new Promise((resolve, reject) => {
+const getPaths = (dir, ignoreDir, isImg, onFile, sourcePath) => new Promise((resolve, reject) => {
   // root dir
   let sp = sourcePath;
   if (!sp) sp = dir;
@@ -15,9 +15,9 @@ const getPaths = (dir, isImg, onFile, sourcePath) => new Promise((resolve, rejec
       // for each path in dir
       async.each(paths, (p, cb) => {
         const name = path.join(dir, p.name);
-        if (p.isDirectory()) {
+        if (p.isDirectory() && name !== ignoreDir) {
           // is directory - read recurrent
-          getPaths(name, isImg, onFile, sp).then(cb).catch(cb);
+          getPaths(name, ignoreDir, isImg, onFile, sp).then(cb).catch(cb);
         } else if (p.isFile() && isImg(name)) {
           // is image file - process
           onFile({
