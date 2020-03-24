@@ -1,7 +1,7 @@
 
 imgcmp
 ==============================================================================
-[![buddy pipeline](https://app.buddy.works/hi-there/imgcmp/pipelines/pipeline/205313/badge.svg?token=04cdb54a84fa521b80a12a17978d9f482cb8b62484528a0c6dcae50ea1c5add2 "buddy pipeline")](https://app.buddy.works/hi-there/imgcmp/pipelines/pipeline/205313)
+[![buddy pipeline](https://app.buddy.works/hi-there/imgcmp/pipelines/pipeline/205313/badge.svg?token=e8b8f0081f207b429dc2802fa29c9599964cdc62907097473e1c0bd58ec929e2 "buddy pipeline")](https://app.buddy.works/hi-there/imgcmp/pipelines/pipeline/205313)
 [![GitHub issues](https://img.shields.io/github/issues/buddy-works/imgcmp.svg)](https://github.com/buddy-works/imgcmp/issues)
 [![GitHub stars](https://img.shields.io/github/stars/buddy-works/imgcmp.svg)](https://github.com/buddy-works/imgcmp/stargazers)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/buddy-works/imgcmp/master/LICENSE)
